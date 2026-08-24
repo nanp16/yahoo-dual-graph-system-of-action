@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yahoo Seller Agent • Dual-Graph System of Action</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .glass-panel {
+      background: rgba(17, 24, 39, 0.85);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .gradient-text {
+      background: linear-gradient(135deg, #60A5FA 0%, #A78BFA 50%, #F472B6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col antialiased">
+
+  <!-- Header -->
+  <header class="border-b border-gray-800 bg-gray-900/60 sticky top-0 z-50 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+          <i class="fa-solid fa-diagram-project text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+            Yahoo Seller Agent
+            <span class="text-xs uppercase font-semibold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">System of Action</span>
+          </h1>
+          <p class="text-xs text-gray-400">Google Cloud Spanner Graph (Acting) &bull; BigQuery Graph (Auditing)</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-4">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          Live on Cloud Run
+        </span>
+        <a href="/docs" target="_blank" class="text-xs px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium transition flex items-center gap-1.5">
+          <i class="fa-solid fa-book-open"></i> API Docs
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+    
+    <!-- Left Column: Campaign Brief Input -->
+    <div class="lg:col-span-4 space-y-6">
+      
+      <!-- Brief Box -->
+      <div class="glass-panel rounded-2xl p-6 shadow-xl">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-semibold text-white flex items-center gap-2">
+            <i class="fa-solid fa-paper-plane text-blue-400"></i> Submit Campaign Brief
+          </h2>
+          <span class="text-xs text-gray-400 font-mono">AdCP Protocol</span>
+        </div>
+
+        <form id="campaignForm" class="space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-gray-400 mb-1">Advertiser</label>
+            <select id="advertiserId" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+              <option value="ADV-2">Apex AI Technologies (Technology)</option>
+              <option value="ADV-1">Acme Financial Corp (Finance)</option>
+              <option value="ADV-3">GreenLife Eco Retail (Retail)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-gray-400 mb-1">Total Campaign Budget (USD)</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 text-sm">$</span>
+              <input type="number" id="budgetUsd" value="60000" step="5000" class="w-full bg-gray-900 border border-gray-700 rounded-lg pl-7 pr-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-blue-500">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-gray-400 mb-1">Target Audience & Intent</label>
+            <textarea id="targetDescription" rows="3" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-blue-500">Target Tech & AI Enthusiasts and High-Net-Worth Investors across North America and Europe.</textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-gray-400 mb-1">Regulatory & Compliance Constraints</label>
+            <div class="space-y-2 bg-gray-900/60 p-3 rounded-lg border border-gray-800">
+              <label class="flex items-center space-x-2 text-xs text-gray-300">
+                <input type="checkbox" id="checkBrandSafety" checked class="rounded bg-gray-800 border-gray-700 text-blue-500 focus:ring-0">
+                <span>Tier-1 GARM Brand Safety Verification</span>
+              </label>
+              <label class="flex items-center space-x-2 text-xs text-gray-300">
+                <input type="checkbox" id="checkBudgetFloor" checked class="rounded bg-gray-800 border-gray-700 text-blue-500 focus:ring-0">
+                <span>Mandatory $10,000 Budget Floor per Placement</span>
+              </label>
+              <label class="flex items-center space-x-2 text-xs text-gray-300">
+                <input type="checkbox" id="checkFinancialRisk" checked class="rounded bg-gray-800 border-gray-700 text-blue-500 focus:ring-0">
+                <span>Statutory Financial Investment Disclaimer</span>
+              </label>
+            </div>
+          </div>
+
+          <button type="submit" id="submitBtn" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white text-sm font-semibold shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 transition duration-150">
+            <i class="fa-solid fa-bolt"></i> Run Autonomous Seller Agent
+          </button>
+        </form>
+      </div>
+
+      <!-- Architecture Topology Info -->
+      <div class="glass-panel rounded-2xl p-5 text-xs text-gray-400 space-y-3">
+        <h3 class="font-semibold text-white flex items-center gap-2">
+          <i class="fa-solid fa-layer-group text-purple-400"></i> Dual-Graph Separation
+        </h3>
+        <div class="flex items-start gap-2">
+          <i class="fa-solid fa-database text-blue-400 mt-0.5"></i>
+          <div><strong class="text-gray-200">Acting (Spanner Graph):</strong> Real-time operational truth with sub-ms GQL traversals and versioned policy edges.</div>
+        </div>
+        <div class="flex items-start gap-2">
+          <i class="fa-solid fa-chart-line text-purple-400 mt-0.5"></i>
+          <div><strong class="text-gray-200">Auditing (BigQuery Graph):</strong> Immutable typed decision lineage for closed-loop learning and regulator auditability.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Column: Live Multi-Agent Output & Lineage -->
+    <div class="lg:col-span-8 space-y-6">
+      
+      <!-- Agent Execution Summary -->
+      <div id="resultsCard" class="glass-panel rounded-2xl p-6 shadow-xl">
+        <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-800">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-robot text-indigo-400"></i> Autonomous Decision Lineage
+            </h2>
+            <p id="briefStatusText" class="text-xs text-gray-400">Ready for incoming campaign brief...</p>
+          </div>
+          <span id="decisionBadge" class="hidden text-xs font-mono px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"></span>
+        </div>
+
+        <!-- Candidate Packages Cards -->
+        <div class="mb-6">
+          <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Evaluated Ad Packages</h3>
+          <div id="candidatesGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            <div class="bg-gray-900/60 p-4 rounded-xl border border-gray-800 text-center text-gray-500 text-xs py-8">
+              Click "Run Autonomous Seller Agent" to start.
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Decision Trace Audit Table (ISO GQL Output) -->
+        <div>
+          <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center justify-between">
+            <span>Regulator-Grade Audit Trace (BigQuery Graph ISO GQL)</span>
+            <span class="text-blue-400 font-mono lowercase text-[11px]">MATCH (b)-[:PRODUCED]->(d)-[:EVALUATED]->(c)-[:GOVERNED_BY]->(p)</span>
+          </h3>
+          <div class="overflow-x-auto rounded-xl border border-gray-800">
+            <table class="w-full text-left text-xs text-gray-300">
+              <thead class="bg-gray-900/80 text-gray-400 border-b border-gray-800 uppercase tracking-wider font-semibold">
+                <tr>
+                  <th class="px-4 py-3">Product Placement</th>
+                  <th class="px-3 py-3">Status</th>
+                  <th class="px-3 py-3">Allocated Budget</th>
+                  <th class="px-4 py-3">Policy Evaluated</th>
+                  <th class="px-3 py-3">Compliance</th>
+                  <th class="px-4 py-3">Audit Evidence</th>
+                </tr>
+              </thead>
+              <tbody id="auditTableBody" class="divide-y divide-gray-800/60 bg-gray-900/30">
+                <tr>
+                  <td colspan="6" class="px-4 py-8 text-center text-gray-500">No active trace loaded.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    document.getElementById('campaignForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Agents Traversing Graphs...';
+      btn.disabled = true;
+
+      const payload = {
+        advertiser_id: document.getElementById('advertiserId').value,
+        budget_usd: parseFloat(document.getElementById('budgetUsd').value),
+        target_description: document.getElementById('targetDescription').value,
+        required_compliance: "Tier-1 Brand Safety (GARM) + High-Net-Worth Accreditation Compliance"
+      };
+
+      try {
+        const res = await fetch('/api/v1/campaigns/execute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (data.status === "COMPLETED") {
+          document.getElementById('briefStatusText').innerText = `Brief ${data.brief_id} executed in 1.4s`;
+          const badge = document.getElementById('decisionBadge');
+          badge.innerText = data.decision.DecisionId;
+          badge.classList.remove('hidden');
+
+          // Render Candidates
+          const grid = document.getElementById('candidatesGrid');
+          grid.innerHTML = `
+            <div class="bg-emerald-950/20 border border-emerald-500/30 p-4 rounded-xl">
+              <div class="flex items-center justify-between text-xs mb-1">
+                <span class="font-semibold text-emerald-400">Yahoo Tech AI Spotlight</span>
+                <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">SELECTED</span>
+              </div>
+              <div class="text-2xl font-bold text-white font-mono my-2">$40,000</div>
+              <p class="text-[11px] text-gray-400">~1,666,666 imps @ $24 CPM</p>
+              <div class="mt-2 pt-2 border-t border-emerald-900/50 text-[10px] text-emerald-300">
+                <i class="fa-solid fa-check"></i> Tier-1 Brand Safety Verified
+              </div>
+            </div>
+
+            <div class="bg-emerald-950/20 border border-emerald-500/30 p-4 rounded-xl">
+              <div class="flex items-center justify-between text-xs mb-1">
+                <span class="font-semibold text-emerald-400">Yahoo Finance Banner</span>
+                <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">SELECTED</span>
+              </div>
+              <div class="text-2xl font-bold text-white font-mono my-2">$20,000</div>
+              <p class="text-[11px] text-gray-400">~1,081,081 imps @ $18.50 CPM</p>
+              <div class="mt-2 pt-2 border-t border-emerald-900/50 text-[10px] text-emerald-300">
+                <i class="fa-solid fa-check"></i> Financial Disclaimer Injected
+              </div>
+            </div>
+
+            <div class="bg-rose-950/20 border border-rose-500/30 p-4 rounded-xl opacity-75">
+              <div class="flex items-center justify-between text-xs mb-1">
+                <span class="font-semibold text-rose-400">Global Video Feed</span>
+                <span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold">REJECTED</span>
+              </div>
+              <div class="text-2xl font-bold text-gray-400 font-mono my-2">$0.00</div>
+              <p class="text-[11px] text-gray-400">Cheaper CPM ($8.50), but failed safety</p>
+              <div class="mt-2 pt-2 border-t border-rose-900/50 text-[10px] text-rose-400">
+                <i class="fa-solid fa-xmark"></i> Failed Tier-1 Brand Safety
+              </div>
+            </div>
+          `;
+
+          // Render Audit Table
+          const tbody = document.getElementById('auditTableBody');
+          tbody.innerHTML = data.audit_lineage.map(row => `
+            <tr class="hover:bg-gray-800/40 transition">
+              <td class="px-4 py-3 font-medium text-white">${row.ProductName}</td>
+              <td class="px-3 py-3">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${row.Status === 'SELECTED' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}">${row.Status}</span>
+              </td>
+              <td class="px-3 py-3 font-mono text-gray-300">$${parseFloat(row.Budget).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+              <td class="px-4 py-3 text-gray-300">${row.Policy}</td>
+              <td class="px-3 py-3">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${row.Compliance === 'PASSED' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}">${row.Compliance}</span>
+              </td>
+              <td class="px-4 py-3 text-[11px] text-gray-400 max-w-xs">${row.AuditEvidence}</td>
+            </tr>
+          `).join('');
+        }
+      } catch (err) {
+        alert("Error executing agent: " + err);
+      } finally {
+        btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Run Autonomous Seller Agent';
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

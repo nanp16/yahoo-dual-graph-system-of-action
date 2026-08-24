@@ -1,8 +1,11 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timezone
 import uuid
+import os
 
 from agents.supervisor_agent import YahooSellerSupervisorAgent
 from agents.lineage_audit_agent import LineageAuditAgent
@@ -23,7 +26,10 @@ class CampaignBriefRequest(BaseModel):
     required_compliance: str = "Tier-1 Brand Safety (GARM) + High-Net-Worth Accreditation Compliance"
 
 @app.get("/")
-def health_check():
+def get_ui():
+    index_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
     return {
         "status": "HEALTHY",
         "service": "Yahoo Seller Multi-Agent Platform",
