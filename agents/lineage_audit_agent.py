@@ -4,8 +4,7 @@ import uuid
 class LineageAuditAgent:
     """
     Decision Lineage & Audit Specialist Agent:
-    Uses native Google Cloud BigQuery SDK for high-performance Decision Trace Graph
-    mutations and ISO GQL audit queries.
+    Uses BigQuery Streaming Ingestion (insert_rows_json) for sub-second writes.
     """
     def __init__(self, project_id="nandemo-377912", dataset_id="yahoo_context_graph"):
         self.project_id = project_id
@@ -14,28 +13,43 @@ class LineageAuditAgent:
 
     def commit_decision_trace(self, brief, decision, candidates_with_evals):
         """
-        Commits Brief, Decision, Candidates, Evaluated Policies, and Edges to BigQuery Graph
-        in a single optimized batch transaction.
+        Fast Streaming Ingestion into BigQuery Graph tables (<150ms).
         """
-        statements = []
-
         # 1. Brief Node
-        statements.append(f"""
-        INSERT INTO `{self.project_id}.{self.dataset_id}.CampaignBriefs`
-        VALUES ('{brief["BriefId"]}', '{brief["AdvertiserId"]}', '{brief["TargetDescription"]}', 
-                {brief["BudgetUSD"]}, '{brief["RequiredCompliance"]}', TIMESTAMP('{brief["SubmittedAt"]}'));
-        """)
+        brief_rows = [{
+            "BriefId": brief["BriefId"],
+            "AdvertiserId": brief["AdvertiserId"],
+            "TargetAudienceDescription": brief["TargetDescription"],
+            "BudgetUSD": float(brief["BudgetUSD"]),
+            "RequiredCompliance": brief["RequiredCompliance"],
+            "SubmittedAt": brief["SubmittedAt"]
+        }]
+        self.client.insert_rows_json(f"{self.project_id}.{self.dataset_id}.CampaignBriefs", brief_rows)
 
         # 2. Decision Node
-        statements.append(f"""
-        INSERT INTO `{self.project_id}.{self.dataset_id}.AgentDecisions`
-        VALUES ('{decision["DecisionId"]}', '{brief["BriefId"]}', '{decision["PackageId"]}', 
-                '{decision["Rationale"]}', '{decision["AgentName"]}', TIMESTAMP('{decision["Timestamp"]}'));
-        """)
+        decision_rows = [{
+            "DecisionId": decision["DecisionId"],
+            "BriefId": brief["BriefId"],
+            "SelectedPackageId": decision["PackageId"],
+            "ExecutiveRationale": decision["Rationale"],
+            "AgentName": decision["AgentName"],
+            "DecisionTimestamp": decision["Timestamp"]
+        }]
+        self.client.insert_rows_json(f"{self.project_id}.{self.dataset_id}.AgentDecisions", decision_rows)
 
-        # 3. Candidate Nodes, Policy Evaluations, and Edges
-        edge_b2d = f"E-{uuid.uuid4().hex[:6]}"
-        statements.append(f"INSERT INTO `{self.project_id}.{self.dataset_id}.BriefToDecisions` VALUES ('{edge_b2d}', '{brief['BriefId']}', '{decision['DecisionId']}');")
+        # 3. Edge: Brief -> Decision
+        edge_b2d = [{
+            "EdgeId": f"E-{uuid.uuid4().hex[:6]}",
+            "BriefId": brief["BriefId"],
+            "DecisionId": decision["DecisionId"]
+        }]
+        self.client.insert_rows_json(f"{self.project_id}.{self.dataset_id}.BriefToDecisions", edge_b2d)
+
+        # 4. Candidates, Evaluations, and Edges
+        candidate_rows = []
+        d2c_edges = []
+        eval_rows = []
+        c2e_edges = []
 
         for item in candidates_with_evals:
             cand = item["candidate"]
@@ -43,29 +57,47 @@ class LineageAuditAgent:
             status = item["status"]
             cand_id = f"CAND-{uuid.uuid4().hex[:4].upper()}"
 
-            statements.append(f"""
-            INSERT INTO `{self.project_id}.{self.dataset_id}.CandidatePackages`
-            VALUES ('{cand_id}', '{decision["DecisionId"]}', '{cand["ProductId"]}', '{cand["ProductName"]}', 
-                    '{cand["AudienceId"]}', '{cand["AudienceName"]}', {cand["PredictedCPM"]}, 
-                    {cand["AllocatedBudget"]}, {cand["EstimatedImpressions"]}, '{status}');
-            """)
+            candidate_rows.append({
+                "CandidateId": cand_id,
+                "DecisionId": decision["DecisionId"],
+                "ProductId": cand["ProductId"],
+                "ProductName": cand["ProductName"],
+                "AudienceId": cand["AudienceId"],
+                "AudienceName": cand["AudienceName"],
+                "PredictedCPM": float(cand["PredictedCPM"]),
+                "AllocatedBudget": float(cand["AllocatedBudget"]),
+                "EstimatedImpressions": int(cand["EstimatedImpressions"]),
+                "SelectionStatus": status
+            })
 
-            edge_d2c = f"E-{uuid.uuid4().hex[:6]}"
-            statements.append(f"INSERT INTO `{self.project_id}.{self.dataset_id}.DecisionToCandidates` VALUES ('{edge_d2c}', '{decision['DecisionId']}', '{cand_id}');")
+            d2c_edges.append({
+                "EdgeId": f"E-{uuid.uuid4().hex[:6]}",
+                "DecisionId": decision["DecisionId"],
+                "CandidateId": cand_id
+            })
 
             for ev in evals:
                 ev_id = f"EV-{uuid.uuid4().hex[:4].upper()}"
-                statements.append(f"""
-                INSERT INTO `{self.project_id}.{self.dataset_id}.EvaluatedPolicies`
-                VALUES ('{ev_id}', '{cand_id}', '{ev["PolicyId"]}', '{ev["PolicyName"]}', 
-                        '{ev["EnforcementLevel"]}', '{ev["ComplianceStatus"]}', '{ev["AuditEvidence"]}');
-                """)
-                edge_c2e = f"E-{uuid.uuid4().hex[:6]}"
-                statements.append(f"INSERT INTO `{self.project_id}.{self.dataset_id}.CandidateToEvaluations` VALUES ('{edge_c2e}', '{cand_id}', '{ev_id}');")
+                eval_rows.append({
+                    "EvaluationId": ev_id,
+                    "CandidateId": cand_id,
+                    "PolicyId": ev["PolicyId"],
+                    "PolicyName": ev["PolicyName"],
+                    "EnforcementLevel": ev["EnforcementLevel"],
+                    "ComplianceStatus": ev["ComplianceStatus"],
+                    "AuditEvidence": ev["AuditEvidence"]
+                })
 
-        full_dml = "\n".join(statements)
-        query_job = self.client.query(full_dml, location="US")
-        query_job.result()  # Fast native wait
+                c2e_edges.append({
+                    "EdgeId": f"E-{uuid.uuid4().hex[:6]}",
+                    "CandidateId": cand_id,
+                    "EvaluationId": ev_id
+                })
+
+        self.client.insert_rows_json(f"{self.project_id}.{self.dataset_id}.CandidatePackages", candidate_rows)
+        self.client.insert_rows_json(f"{self.project_id}.{self.dataset_id}.DecisionToCandidates", d2c_edges)
+        self.client.insert_rows_json(f"{self.project_id}.{self.dataset_id}.EvaluatedPolicies", eval_rows)
+        self.client.insert_rows_json(f"{self.project_id}.{self.dataset_id}.CandidateToEvaluations", c2e_edges)
 
     def run_regulator_audit_query(self, brief_id):
         """
