@@ -1,20 +1,21 @@
-import subprocess
-import json
+from google.cloud import bigquery
 import uuid
 
 class LineageAuditAgent:
     """
     Decision Lineage & Audit Specialist Agent:
-    Captures operational spans into BigQuery Context Graph (DecisionTraceGraph)
-    and executes regulator-grade ISO GQL queries for complete explainability.
+    Uses native Google Cloud BigQuery SDK for high-performance Decision Trace Graph
+    mutations and ISO GQL audit queries.
     """
     def __init__(self, project_id="nandemo-377912", dataset_id="yahoo_context_graph"):
         self.project_id = project_id
         self.dataset_id = dataset_id
+        self.client = bigquery.Client(project=self.project_id)
 
     def commit_decision_trace(self, brief, decision, candidates_with_evals):
         """
-        Commits Brief, Decision, Candidates, Evaluated Policies, and Edges to BigQuery Graph.
+        Commits Brief, Decision, Candidates, Evaluated Policies, and Edges to BigQuery Graph
+        in a single optimized batch transaction.
         """
         statements = []
 
@@ -63,20 +64,12 @@ class LineageAuditAgent:
                 statements.append(f"INSERT INTO `{self.project_id}.{self.dataset_id}.CandidateToEvaluations` VALUES ('{edge_c2e}', '{cand_id}', '{ev_id}');")
 
         full_dml = "\n".join(statements)
-        cmd = [
-            "bq", "query", "--use_legacy_sql=false",
-            f"--project_id={self.project_id}",
-            "--location=US",
-            "--format=prettyjson",
-            full_dml
-        ]
-        res = subprocess.run(cmd, capture_output=True, text=True)
-        if res.returncode != 0:
-            raise RuntimeError(f"LineageAuditAgent error writing to BigQuery Graph: {res.stderr}")
+        query_job = self.client.query(full_dml, location="US")
+        query_job.result()  # Fast native wait
 
     def run_regulator_audit_query(self, brief_id):
         """
-        Runs an ISO GQL graph traversal on BigQuery Context Graph to answer audit inquiries.
+        Runs an ISO GQL graph traversal on BigQuery Context Graph via native client.
         """
         gql = f"""
         GRAPH `{self.project_id}.{self.dataset_id}.DecisionTraceGraph`
@@ -93,15 +86,17 @@ class LineageAuditAgent:
           p.AuditEvidence AS AuditEvidence
         ORDER BY Status DESC, Budget DESC;
         """
-        cmd = [
-            "bq", "query", "--use_legacy_sql=false",
-            f"--project_id={self.project_id}",
-            "--location=US",
-            "--format=prettyjson",
-            gql
-        ]
-        res = subprocess.run(cmd, capture_output=True, text=True)
-        if res.returncode != 0:
-            raise RuntimeError(f"LineageAuditAgent error executing BigQuery GQL: {res.stderr}")
-        
-        return json.loads(res.stdout) if res.stdout.strip() else []
+        query_job = self.client.query(gql, location="US")
+        results = []
+        for row in query_job.result():
+            results.append({
+                "BriefId": row["BriefId"],
+                "AgentName": row["AgentName"],
+                "ProductName": row["ProductName"],
+                "Status": row["Status"],
+                "Budget": str(row["Budget"]),
+                "Policy": row["Policy"],
+                "Compliance": row["Compliance"],
+                "AuditEvidence": row["AuditEvidence"]
+            })
+        return results

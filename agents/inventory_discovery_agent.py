@@ -1,20 +1,22 @@
-import subprocess
-import json
+from google.cloud import spanner
 
 class InventoryDiscoveryAgent:
     """
     Inventory Discovery Specialist Agent:
-    Traverses Cloud Spanner Knowledge Graph (AdMonetizationKnowledgeGraph)
-    to discover active ad products, target audiences, and governing policies in real-time.
+    Uses native Google Cloud Spanner SDK with gRPC connection pooling
+    to traverse Spanner Knowledge Graph in milliseconds.
     """
     def __init__(self, project_id="nandemo-377912", instance_id="demo-spanner", database_id="spanner"):
         self.project_id = project_id
         self.instance_id = instance_id
         self.database_id = database_id
+        self.client = spanner.Client(project=self.project_id)
+        self.instance = self.client.instance(self.instance_id)
+        self.database = self.instance.database(self.database_id)
 
     def discover_matching_inventory(self, target_keywords=None):
         """
-        Executes real-time ISO GQL graph traversal on Spanner Graph.
+        Executes real-time ISO GQL graph traversal on Spanner Graph via native gRPC.
         """
         gql_query = """
         GRAPH AdMonetizationKnowledgeGraph
@@ -32,16 +34,20 @@ class InventoryDiscoveryAgent:
           pol.Name AS PolicyName,
           gp.EnforcementLevel AS EnforcementLevel
         """
-        cmd = [
-            "gcloud", "spanner", "databases", "execute-sql", self.database_id,
-            f"--instance={self.instance_id}",
-            f"--project={self.project_id}",
-            f"--sql={gql_query}",
-            "--format=json"
-        ]
-        res = subprocess.run(cmd, capture_output=True, text=True)
-        if res.returncode != 0:
-            raise RuntimeError(f"InventoryDiscoveryAgent error querying Spanner Graph: {res.stderr}")
-        
-        data = json.loads(res.stdout) if res.stdout.strip() else {}
-        return data.get("rows", [])
+        with self.database.snapshot() as snapshot:
+            results = snapshot.execute_sql(gql_query)
+            rows = []
+            for row in results:
+                rows.append({
+                    "ProductId": row[0],
+                    "ProductName": row[1],
+                    "CPM": row[2],
+                    "AvailableImpressions": row[3],
+                    "AudienceId": row[4],
+                    "AudienceName": row[5],
+                    "AffinityScore": row[6],
+                    "PolicyId": row[7],
+                    "PolicyName": row[8],
+                    "EnforcementLevel": row[9]
+                })
+            return rows
